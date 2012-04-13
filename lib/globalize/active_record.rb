@@ -66,7 +66,7 @@ module Globalize
           { :include => :translations, :conditions => [conditions.join(' AND '), locale] }
         }
 
-        unless options.empty?
+        unless ext_conditions.empty?
           attr_names.each { |attr_name| translated_attr_accessor(attr_name) {ext_conditions} }
         else
           attr_names.each { |attr_name| translated_attr_accessor(attr_name) }
