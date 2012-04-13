@@ -76,11 +76,19 @@ module Globalize
 
     module HasManyExtensions
       def by_locale(locale)
-        first(:conditions => { :locale => locale.to_s })
+        if block_given? && self.respond_to?(:visible) && yield[:visible].present?
+          first(:conditions => { :locale => locale.to_s, :visible => yield[:visible] })
+        else
+          first(:conditions => { :locale => locale.to_s })
+        end
       end
 
       def by_locales(locales)
-        all(:conditions => { :locale => locales.map(&:to_s) })
+        if block_given? && self.respond_to?(:visible) && yield[:visible].present?
+          all(:conditions => { :locale => locales.map(&:to_s), visible => yield[:visible] })
+        else
+          all(:conditions => { :locale => locales.map(&:to_s) })
+        end
       end
     end
 

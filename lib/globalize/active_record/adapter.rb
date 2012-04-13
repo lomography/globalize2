@@ -40,14 +40,25 @@ module Globalize
 
         def fetch_translation(locale)
           locale = locale.to_sym
-          record.translations.loaded? ? record.translations.detect { |t| t.locale == locale } :
-            record.translations.by_locale(locale)
+
+          if record.translations.loaded?
+            if record.respond_to?(:visible)
+              record.translations.detect { |t|  t.locale == locale && t.visible == true}
+            else
+              record.translations.detect { |t|  t.locale == locale}
+            end
+          else
+            record.translations.by_locale(locale){ {:visible => true } }
+          end
         end
 
         def fetch_translations(locale)
           # only query if not already included with :include => translations
-          record.translations.loaded? ? record.translations :
-            record.translations.by_locales(Globalize.fallbacks(locale))
+          if record.translations.loaded?
+            record.translations.collect{ |t| t.visible == true}
+          else
+            record.translations.by_locales(Globalize.fallbacks(locale)){ {:visible => true } }
+          end
         end
 
         def fetch_attribute(locale, attr_name)
