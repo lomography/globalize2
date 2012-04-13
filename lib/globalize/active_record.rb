@@ -40,7 +40,7 @@ module Globalize
         @@locale = locale
       end
 
-      def translates(*attr_names)
+      def translates(ext_conditions, *attr_names)
         return if translates?
         options = attr_names.extract_options!
 
@@ -66,8 +66,8 @@ module Globalize
           { :include => :translations, :conditions => [conditions.join(' AND '), locale] }
         }
 
-        if block_given?
-          attr_names.each { |attr_name| translated_attr_accessor(attr_name) {yield} }
+        unless options.empty?
+          attr_names.each { |attr_name| translated_attr_accessor(attr_name) {ext_conditions} }
         else
           attr_names.each { |attr_name| translated_attr_accessor(attr_name) }
         end
