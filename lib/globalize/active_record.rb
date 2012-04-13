@@ -66,7 +66,11 @@ module Globalize
           { :include => :translations, :conditions => [conditions.join(' AND '), locale] }
         }
 
-        attr_names.each { |attr_name| translated_attr_accessor(attr_name) }
+        if block_given?
+          attr_names.each { |attr_name| translated_attr_accessor(attr_name) {yield} }
+        else
+          attr_names.each { |attr_name| translated_attr_accessor(attr_name) }
+        end
       end
 
       def translates?
@@ -76,7 +80,7 @@ module Globalize
 
     module HasManyExtensions
       def by_locale(locale)
-        if block_given? && self.respond_to?(:visible) && yield[:visible].present?
+        if block_given?
           first(:conditions => { :locale => locale.to_s, :visible => yield[:visible] })
         else
           first(:conditions => { :locale => locale.to_s })
@@ -84,8 +88,8 @@ module Globalize
       end
 
       def by_locales(locales)
-        if block_given? && self.respond_to?(:visible) && yield[:visible].present?
-          all(:conditions => { :locale => locales.map(&:to_s), visible => yield[:visible] })
+        if block_given?
+          all(:conditions => { :locale => locales.map(&:to_s), :visible => yield[:visible] })
         else
           all(:conditions => { :locale => locales.map(&:to_s) })
         end
@@ -146,9 +150,17 @@ module Globalize
             globalize.write(self.class.locale || I18n.locale, name, value)
             self[name] = value
           }
-          define_method name, lambda { |*args|
-            globalize.fetch(args.first || self.class.locale || I18n.locale, name)
-          }
+
+          if block_given?
+            define_method name, lambda { |*args|
+              globalize.fetch(args.first || self.class.locale || I18n.locale, name) {yield}
+            }
+          else
+            define_method name, lambda { |*args|
+              globalize.fetch(args.first || self.class.locale || I18n.locale, name)
+            }
+          end
+
           alias_method "#{name}_before_type_cast", name
         end
 

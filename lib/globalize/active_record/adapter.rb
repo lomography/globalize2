@@ -12,9 +12,16 @@ module Globalize
       end
 
       def fetch(locale, attr_name)
-        cache.contains?(locale, attr_name) ?
-          cache.read(locale, attr_name) :
-          cache.write(locale, attr_name, fetch_attribute(locale, attr_name))
+        if cache.contains?(locale, attr_name)
+          cache.read(locale, attr_name)
+        else
+          if block_given?
+            cache.write(locale, attr_name, fetch_attribute(locale, attr_name) {yield})
+          else
+            cache.write(locale, attr_name, fetch_attribute(locale, attr_name))
+          end
+
+        end
       end
 
       def write(locale, attr_name, value)
@@ -40,33 +47,40 @@ module Globalize
 
         def fetch_translation(locale)
           locale = locale.to_sym
-
-          if record.translations.loaded?
-            if record.respond_to?(:visible)
-              record.translations.detect { |t|  t.locale == locale && t.visible == true}
-            else
-              record.translations.detect { |t|  t.locale == locale}
-            end
+          if block_given?
+            record.translations.detect { |t| t.locale == locale && t.visible == yield[:visible]} if(record.translations.loaded?)
+            record.translations.by_locale(locale){yield} unless(record.translations.loaded?)
           else
-            record.translations.by_locale(locale){ {:visible => true } }
+            record.translations.detect { |t| t.locale == locale} if(record.translations.loaded?)
+            record.translations.by_locale(locale) unless(record.translations.loaded?)
           end
         end
 
         def fetch_translations(locale)
           # only query if not already included with :include => translations
-          if record.translations.loaded?
-            record.translations.collect{ |t| t.visible == true}
+          if block_given?
+            record.translations.collect{ |t| t if(t.visible == yield[:visible])}.uniq.delete_if{|t| t.nil?} if(record.translations.loaded?)
+            record.translations.by_locales(Globalize.fallbacks(locale)){yield} unless(record.translations.loaded?)
           else
-            record.translations.by_locales(Globalize.fallbacks(locale)){ {:visible => true } }
+            record.translations if(record.translations.loaded?)
+            record.translations.by_locales(Globalize.fallbacks(locale)) unless(record.translations.loaded?)
           end
         end
 
         def fetch_attribute(locale, attr_name)
-          translations = fetch_translations(locale)
+          if block_given?
+            translations = fetch_translations(locale) {yield}
+            # to have some translations for fallback
+            translations = fetch_translations(locale) { {:visible => true } } if translations.empty?
+          else
+            translations = fetch_translations(locale)
+          end
           value, requested_locale = nil, locale
 
           Globalize.fallbacks(locale).each do |fallback|
-            translation = translations.detect { |t| t.locale == fallback }
+            translation = translations.detect { |t|
+              t.locale == fallback
+            }
             value  = translation && translation.send(attr_name)
             locale = fallback && break if value
           end
