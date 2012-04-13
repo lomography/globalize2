@@ -5,13 +5,13 @@
 
 Gem::Specification.new do |s|
   s.name = %q{globalize2}
-  s.version = "0.2.0"
+  s.version = "0.2.2"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
-  s.authors = ["Sven Fuchs, Joshua Harvey, Clemens Kofler, John-Paul Bader"]
-  s.date = %q{2010-04-22}
-  s.description = %q{Rails I18n: de-facto standard library for ActiveRecord data translation}
-  s.email = %q{joshmh@gmail.com}
+  s.authors = ["André Fischer"]
+  s.date = %q{2012-04-13}
+  s.description = %q{Rails I18n: de-facto standard library for ActiveRecord data translation; forked for adding visibility conditions}
+  s.email = %q{andre.fischer@lomography.com}
   s.extra_rdoc_files = [
     "LICENSE",
      "README.textile"
